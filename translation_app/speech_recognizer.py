@@ -31,7 +31,7 @@ class SpeechRecognizer:
             stream.close()
             p.terminate()
 
-    def recognize_stream(self):
+    def recognize_stream(self, update_callback):
         """Recognize speech from the microphone stream."""
         requests = (speech.StreamingRecognizeRequest(audio_content=content) for content in self.stream_microphone())
         responses = self.client.streaming_recognize(self.streaming_config, requests)
@@ -39,11 +39,6 @@ class SpeechRecognizer:
         for response in responses:
             for result in response.results:
                 if result.is_final:
-                    print('Final transcript:', result.alternatives[0].transcript)
+                    update_callback('Final transcript: ' + result.alternatives[0].transcript)
                 else:
-                    print('Interim result:', result.alternatives[0].transcript)
-
-# Example usage
-if __name__ == "__main__":
-    recognizer = SpeechRecognizer()
-    recognizer.recognize_stream()
+                    update_callback('Interim result: ' + result.alternatives[0].transcript)

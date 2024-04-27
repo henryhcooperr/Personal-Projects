@@ -1,15 +1,14 @@
 import tkinter as tk
 from threading import Thread
 from speech_recognizer import SpeechRecognizer
-import speech_recognition as sr
 
 class TranscriptionApp:
     def __init__(self, master):
         self.master = master
         master.title("Transcription App")
-        self.state = False
         self.setup_gui()
         self.speech_recognizer = SpeechRecognizer()
+        self.recording_thread = None
 
     def setup_gui(self):
         self.label = tk.Label(self.master, text="Click 'Start Recording' to begin.", wraplength=300)
@@ -20,27 +19,25 @@ class TranscriptionApp:
         self.stop_button.pack()
 
     def start_recording(self):
-        self.state = True
-        self.label.config(text="Recording...")
         self.start_button.config(state=tk.DISABLED)
         self.stop_button.config(state=tk.NORMAL)
-        self.thread = Thread(target=self.record)
-        self.thread.start()
+        self.label.config(text="Recording...")
+        self.recording_thread = Thread(target=self.speech_recognizer.recognize_stream, args=(self.update_label,))
+        self.recording_thread.start()
 
     def stop_recording(self):
-        self.state = False
-        self.stop_button.config(state=tk.DISABLED)
+        self.speech_recognizer.stream_microphone().close()  # Needs proper implementation to safely stop the stream
+        self.recording_thread.join()
         self.start_button.config(state=tk.NORMAL)
+        self.stop_button.config(state=tk.DISABLED)
         self.label.config(text="Stopped recording. Click 'Start Recording' to begin.")
 
-    def record(self):
-        with sr.Microphone() as source:
-            while self.state:
-                text = self.speech_recognizer.recognize_speech(source)
-                if text is not None:
-                    self.update_label(text)
-
     def update_label(self, text):
-        if self.state:
+        if self.master:
             self.label.config(text=text)
-            print(text)
+
+# Set up the root window
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = TranscriptionApp(root)
+    root.mainloop()
