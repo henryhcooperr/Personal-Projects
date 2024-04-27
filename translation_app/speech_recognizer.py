@@ -33,7 +33,8 @@ class SpeechRecognizer:
         responses = self.client.streaming_recognize(self.streaming_config, requests)
         for response in responses:
             for result in response.results:
-                update_callback(result.alternatives[0].transcript)
+                # Pass both the transcript and whether it's a final result
+                update_callback(result.alternatives[0].transcript, result.is_final)
 
     def stop(self):
         self.keep_recording = False

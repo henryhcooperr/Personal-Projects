@@ -2,13 +2,15 @@ import tkinter as tk
 from tkinter import ttk  # Themed Tkinter for better looking widgets
 from threading import Thread
 from speech_recognizer import SpeechRecognizer
+from transcription_analyzer import TranscriptionAnalyzer
+import os
+
+
 
 class TranscriptionApp:
     def __init__(self, master):
         self.master = master
         master.title("Transcription App")
-
-        # Using ttk.Frame for better styling and padding
         self.main_frame = ttk.Frame(master, padding="10 10 10 10")
         self.main_frame.grid(row=0, column=0, sticky=(tk.N, tk.W, tk.E, tk.S))
         self.master.columnconfigure(0, weight=1)
@@ -17,6 +19,13 @@ class TranscriptionApp:
         self.setup_gui()
         self.speech_recognizer = SpeechRecognizer()
         self.recording_thread = None
+        # Initialize the analyzer with your OpenAI API key
+        api_key = os.getenv('OPENAI_API_KEY')
+        print("Retrieved API Key:", api_key)  # This should print your actual API key, ensure it's correct and not None or 'api_key'
+
+        if not api_key:
+            raise ValueError("API key is not set")
+        self.analyzer = TranscriptionAnalyzer(api_key)
 
     def setup_gui(self):
         # Configuring the layout with ttk for a consistent look
@@ -64,9 +73,14 @@ class TranscriptionApp:
         self.stop_button.config(state=tk.DISABLED)
         self.label.config(text="Stopped recording. Click 'Start Recording' to begin.")
 
-    def update_label(self, text):
-        self.text.insert(tk.END, text + '\n')  # Insert text into the Text widget and add a newline
-        self.text.see(tk.END)  # Auto-scroll to the bottom
+    def update_label(self, text, is_final=False):
+        if is_final:
+            self.text.insert(tk.END, text + '\n')
+            self.text.see(tk.END)
+            analyzed_text = self.analyzer.analyze_transcription(text)
+            print(analyzed_text)  # Optionally display or further process the analyzed text
+            self.analyzer.save_transcription(text)
+
 
 if __name__ == "__main__":
     root = tk.Tk()
